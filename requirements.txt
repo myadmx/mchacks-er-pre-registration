@@ -1,0 +1,10 @@
+Flask==3.0.0
+pymongo==4.6.0
+Pillow==10.2.0
+bing-image-downloader==1.1.2
+tensorflow==2.15.0
+scikit-learn==1.4.0
+python-dotenv==1.0.0
+requests==2.31.0
+gunicorn==21.2.0
+opencv-python==4.8.1.78

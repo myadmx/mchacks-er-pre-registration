@@ -216,22 +216,22 @@ def analyze_injury():
         print(f"Error in analyze_injury: {e}") 
         return jsonify({"error": f"Server Error: {str(e)}"})
 
-# --- FORM SUBMISSION ROUTE (FIXED NAME & SYMPTOMS) ---
+# --- FORM SUBMISSION ROUTE ---
 @app.route("/submit", methods=["POST"])
 def submit():
     # 1. Get the name correctly from HTML name="name"
     full_name = request.form.get("name") 
     
-    # 2. Join symptoms list into a string so AI can read it
+    # 2. Join symptoms list into a string
     subsymptoms_list = request.form.getlist("subsymptoms")
-    subsymptoms_str = ", ".join(subsymptoms_list) if subsymptoms_list else "None"
+    subsymptoms_str = ", ".join(subsymptoms_list) if subsymptoms_list else "None selected"
 
     # 3. Prepare data for AI
     raw_patient_data = {
         "full_name": full_name,
         "sex": request.form.get("sex"),
-        "age": request.form.get("age_range"), # Changed key to 'age' to match classifier
-        "subsymptoms": subsymptoms_str,       # Sending string, not list
+        "age": request.form.get("age_range"),
+        "subsymptoms": subsymptoms_str,       
         "additional_info": request.form.get("information_text"),
         "diagnosed_conditions": request.form.get("diagnosed_conditions"),
         "eta": request.form.get("eta_data"),
@@ -245,9 +245,7 @@ def submit():
         # 4. Call Classifier
         ai_result = classify_patient(raw_patient_data)
         
-        # 5. Handle AI Result
         if isinstance(ai_result, str):
-            # If AI returns a code block like ```json ... ``` clean it
             clean_json = ai_result.replace("```json", "").replace("```", "").strip()
             triage_analysis = json.loads(clean_json)
         else:
@@ -258,12 +256,13 @@ def submit():
         # Fallback if AI fails
         triage_analysis = {
             "full_name": full_name,
-            "main_symptoms": ["Error analyzing symptoms"],
+            "main_symptoms": ["AI Error"],
+            "main_subsymptoms": subsymptoms_list, # Use raw list if AI fails
             "severity": 1,
             "triage_category": "Non-critical"
         }
 
-    # 6. Save to Database
+    # 5. Save to Database
     patient_record = {
         "full_name": full_name,
         "raw_data": raw_patient_data,
@@ -283,5 +282,5 @@ def dashboard():
 
 if __name__ == "__main__":
     initialize_ai()
-    print("\n✅ App is running! (Port 5000)")
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
