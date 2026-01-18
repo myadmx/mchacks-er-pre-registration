@@ -8,8 +8,13 @@
 <body class="page-bg">
 
 <header class="header">
-    <img src="/static/chum-logo.png" alt="CHUM Hospital" class="logo">
-    <h1>CHUM Hospital</h1>
+    <div class="header-left">
+        <img src="/static/chum-logo.png" alt="CHUM Hospital" class="logo">
+        <h1>CHUM Hospital</h1>
+    </div>
+    <div class="header-right">
+        <img src="/static/CAREFLOW_logo.png" alt="Careflow" class="careflow-logo" style="height: 100px; width: auto;">
+    </div>
 </header>
 
 <section class="hero">
@@ -32,7 +37,6 @@
         <option value="Prefer not to say">Prefer not to say</option>
     </select><br><br>
 
-
     <label>Medical Card Number:</label><br>
     <input 
         type="text" 
@@ -40,12 +44,8 @@
         id="medicalCard"
         oninput="validateMedicalCard()"
         required>
-
-    <div id="cardError" style="color:red; font-size:12px; display:none;">
-        No spaces allowed.
-    </div>
+    <div id="cardError" style="color:red; font-size:12px; display:none;">No spaces allowed.</div>
     <br><br>
-
 
     <label>Phone Number:</label><br>
     <input 
@@ -55,13 +55,8 @@
         placeholder="e.g. 5141234567"
         oninput="validatePhoneNumber()"
         required>
-
-    <div id="phoneError" style="color:red; font-size:12px; display:none;">
-        Enter a valid phone number (digits only).
-    </div>
+    <div id="phoneError" style="color:red; font-size:12px; display:none;">Enter a valid phone number (digits only).</div>
     <br><br>
-
-
 
     <label>Age Range:</label><br>
     <select name="age_range">
@@ -75,184 +70,176 @@
     </select><br><br>
 
     <label>Symptoms:</label><br>
+    
     <div class="symptom-grid">
 
-    <div class="symptom-box">
-        <input type="checkbox" onclick="toggleSub(this, 'fever')"> Fever / feeling sick
-        <div id="fever" class="sub-symptoms">
-            <input type="checkbox" name="subsymptoms" value="fever"> Fever<br>
-            <input type="checkbox" name="subsymptoms" value="chills"> Chills<br>
-            <input type="checkbox" name="subsymptoms" value="flu"> Flu-like illness
+        <div class="symptom-box">
+            <label>
+                <input type="checkbox" onclick="toggleSub(this, 'fever')">
+                Fever / feeling sick
+            </label>
+            <div id="fever" class="sub-symptoms">
+                <label><input type="checkbox" name="subsymptoms" value="fever"> Fever</label>
+                <label><input type="checkbox" name="subsymptoms" value="chills"> Chills</label>
+                <label><input type="checkbox" name="subsymptoms" value="flu"> Flu-like illness</label>
+            </div>
+        </div>
+    
+        <div class="symptom-box">
+            <label>
+                <input type="checkbox" onclick="toggleSub(this,'injury')">
+                Injury or trauma
+                <span class="camera-icon" onclick="openCamera()">📷</span>
+            </label>
+            <div id="injury" class="sub-symptoms">
+                <label><input type="checkbox" name="subsymptoms" value="sprain"> Sprains</label>
+                <label><input type="checkbox" name="subsymptoms" value="cut"> Cuts</label>
+                <label><input type="checkbox" name="subsymptoms" value="burn"> Burns</label>
+                <label><input type="checkbox" name="subsymptoms" value="dislocation"> Dislocations</label>
+                <label><input type="checkbox" name="subsymptoms" value="fracture"> Fractures</label>
+            </div>
+        </div>
+
+        <div class="symptom-box">
+            <label>
+                <input type="checkbox" onclick="toggleSub(this,'chest')">
+                Chest pain or discomfort
+            </label>
+            <div id="chest" class="sub-symptoms">
+                <label><input type="checkbox" name="subsymptoms" value="pressure"> Pressure</label>
+                <label><input type="checkbox" name="subsymptoms" value="tightness"> Tightness</label>
+                <label><input type="checkbox" name="subsymptoms" value="pain"> Pain</label>
+            </div>
+        </div>
+
+        <div class="symptom-box">
+            <label>
+                <input type="checkbox" onclick="toggleSub(this,'breathing')">
+                Breathing problems
+            </label>
+            <div id="breathing" class="sub-symptoms">
+                <label><input type="checkbox" name="subsymptoms" value="shortness"> Shortness of breath</label>
+                <label><input type="checkbox" name="subsymptoms" value="wheezing"> Wheezing</label>
+                <label><input type="checkbox" name="subsymptoms" value="trouble"> Trouble breathing</label>
+            </div>
+        </div>
+
+        <div class="symptom-box">
+            <label>
+                <input type="checkbox" onclick="toggleSub(this,'stomach')">
+                Stomach / digestive
+            </label>
+            <div id="stomach" class="sub-symptoms">
+                <label><input type="checkbox" name="subsymptoms" value="abdominal"> Abdominal pain</label>
+                <label><input type="checkbox" name="subsymptoms" value="nausea"> Nausea</label>
+                <label><input type="checkbox" name="subsymptoms" value="vomiting"> Vomiting</label>
+                <label><input type="checkbox" name="subsymptoms" value="diarrhea"> Diarrhea</label>
+            </div>
+        </div>
+
+        <div class="symptom-box">
+            <label>
+                <input type="checkbox" onclick="toggleSub(this,'neuro')">
+                Head or neurological symptoms
+            </label>
+            <div id="neuro" class="sub-symptoms">
+                <label><input type="checkbox" name="subsymptoms" value="headache"> Headache</label>
+                <label><input type="checkbox" name="subsymptoms" value="dizziness"> Dizziness</label>
+                <label><input type="checkbox" name="subsymptoms" value="fainting"> Fainting</label>
+                <label><input type="checkbox" name="subsymptoms" value="numbness"> Numbness</label>
+            </div>
+        </div>
+
+        <div class="symptom-box">
+            <label>
+                <input type="checkbox" onclick="toggleSub(this, 'skin')">
+                Skin problems
+                <span class="camera-icon" onclick="openCamera()">📷</span>
+            </label>
+            <div id="skin" class="sub-symptoms">
+                <label><input type="checkbox" name="subsymptoms" value="rash"> Rash</label>
+                <label><input type="checkbox" name="subsymptoms" value="swelling"> Swelling</label>
+                <label><input type="checkbox" name="subsymptoms" value="infection"> Infection</label>
+            </div>
+        </div>
+
+        <div class="symptom-box">
+            <label>
+                <input type="checkbox" onclick="toggleSub(this, 'bleeding')"> 
+                Bleeding or wounds
+                <span class="camera-icon" onclick="openCamera()">📷</span>
+            </label>
+            <div id="bleeding" class="sub-symptoms">
+                <label><input type="checkbox" name="subsymptoms" value="cuts"> Cuts</label>
+                <label><input type="checkbox" name="subsymptoms" value="nosebleeds"> Nosebleeds</label>
+                <label><input type="checkbox" name="subsymptoms" value="uncontrolled"> Uncontrolled bleeding</label>
+            </div>
+        </div>
+
+        <div class="symptom-box">
+            <label>
+                <input type="checkbox" onclick="toggleSub(this, 'mental')"> 
+                Mental or emotional distress
+            </label>
+            <div id="mental" class="sub-symptoms">
+                <label><input type="checkbox" name="subsymptoms" value="anxiety"> Anxiety</label>
+                <label><input type="checkbox" name="subsymptoms" value="panic"> Panic</label>
+                <label><input type="checkbox" name="subsymptoms" value="unwell"> Feeling unwell</label>
+            </div>
+        </div>
+
+        <div class="symptom-box">
+            <label>
+                <input type="checkbox" onclick="toggleSub(this,'allergic')"> 
+                Allergic reaction
+            </label>
+            <div id="allergic" class="sub-symptoms">
+                <label><input type="checkbox" name="subsymptoms" value="skin_reaction"> Skin problems</label>
+                <label><input type="checkbox" name="subsymptoms" value="dizziness"> Dizziness</label>
+                <label><input type="checkbox" name="subsymptoms" value="nausea"> Nausea</label>
+                <label><input type="checkbox" name="subsymptoms" value="breathing"> Breathing problems</label>
+            </div>
+        </div>
+
+    </div>
+    <div id="cameraPhotoWrapper">
+        <div id="cameraSection" style="display:none;">
+            <video id="video" width="300" autoplay></video><br><br>
+            <button type="button" onclick="takePhoto()">Take Photo</button>
+            <button type="button" onclick="closeCamera()">Close Camera</button>
+            <canvas id="canvas" width="300" height="225" style="display:none;"></canvas>
+        </div>
+        <div id="photoSection">
+            <p><strong>Captured Images:</strong></p>
+            <div id="photoContainer"></div>
         </div>
     </div>
 
-    <div class="symptom-box">
-        <input type="checkbox" onclick="toggleSub(this,'injury')"> Injury or trauma
-        <span class="camera-icon" onclick="openCamera()">📷</span>
-        <div id="injury" class="sub-symptoms">
-            <input type="checkbox" name="subsymptoms" value="sprain"> Sprains<br>
-            <input type="checkbox" name="subsymptoms" value="cut"> Cuts<br>
-            <input type="checkbox" name="subsymptoms" value="burn"> Burns<br>
-            <input type="checkbox" name="subsymptoms" value="dislocation"> Dislocations<br>
-            <input type="checkbox" name="subsymptoms" value="fracture"> Fractures
-        </div>
-    </div>
-
-    <div class="symptom-box">
-        <input type="checkbox" onclick="toggleSub(this,'chest')"> Chest pain or discomfort
-        <div id="chest" class="sub-symptoms">
-            <input type="checkbox" name="subsymptoms" value="pressure"> Pressure<br>
-            <input type="checkbox" name="subsymptoms" value="tightness"> Tightness<br>
-            <input type="checkbox" name="subsymptoms" value="pain"> Pain
-        </div>
-    </div>
-
-    <div class="symptom-box">
-        <input type="checkbox" onclick="toggleSub(this,'breathing')"> Breathing problems
-        <div id="breathing" class="sub-symptoms">
-            <input type="checkbox" name="subsymptoms" value="shortness"> Shortness of breath<br>
-            <input type="checkbox" name="subsymptoms" value="wheezing"> Wheezing<br>
-            <input type="checkbox" name="subsymptoms" value="trouble"> Trouble breathing
-        </div>
-    </div>
-
-    <div class="symptom-box">
-        <input type="checkbox" onclick="toggleSub(this,'stomach')"> Stomach / digestive
-        <div id="stomach" class="sub-symptoms">
-            <input type="checkbox" name="subsymptoms" value="abdominal"> Abdominal pain<br>
-            <input type="checkbox" name="subsymptoms" value="nausea"> Nausea<br>
-            <input type="checkbox" name="subsymptoms" value="vomiting"> Vomiting<br>
-            <input type="checkbox" name="subsymptoms" value="diarrhea"> Diarrhea
-        </div>
-    </div>
-    <!-- SECOND ROW OF SYMPTOMS -->
-
-    <div class="symptom-box">
-        <input type="checkbox" onclick="toggleSub(this,'neuro')"> Head or neurological symptoms
-        <div id="neuro" class="sub-symptoms">
-            <input type="checkbox" name="subsymptoms" value="headache"> Headache<br>
-            <input type="checkbox" name="subsymptoms" value="dizziness"> Dizziness<br>
-            <input type="checkbox" name="subsymptoms" value="fainting"> Fainting<br>
-            <input type="checkbox" name="subsymptoms" value="numbness"> Numbness
-        </div>
-    </div>
-
-    <div class="symptom-box">
-        <input type="checkbox" onclick="toggleSub(this, 'skin')"> Skin problems
-        <span class="camera-icon" onclick="openCamera()">📷</span>
-        <div id="skin" class="sub-symptoms">
-            <input type="checkbox" name="subsymptoms" value="rash"> Rash<br>
-            <input type="checkbox" name="subsymptoms" value="swelling"> Swelling<br>
-            <input type="checkbox" name="subsymptoms" value="infection"> Infection
-        </div>
-    </div>
-
-    <div class="symptom-box">
-        <input type="checkbox" onclick="toggleSub(this, 'bleeding')"> Bleeding or wounds
-        <span class="camera-icon" onclick="openCamera()">📷</span>
-        <div id="bleeding" class="sub-symptoms">
-            <input type="checkbox" name="subsymptoms" value="cuts"> Cuts<br>
-            <input type="checkbox" name="subsymptoms" value="nosebleeds"> Nosebleeds<br>
-            <input type="checkbox" name="subsymptoms" value="uncontrolled"> Uncontrolled bleeding
-        </div>
-    </div>
-
-    <div class="symptom-box">
-        <input type="checkbox" onclick="toggleSub(this, 'mental')"> Mental or emotional distress
-        <div id="mental" class="sub-symptoms">
-            <input type="checkbox" name="subsymptoms" value="anxiety"> Anxiety<br>
-            <input type="checkbox" name="subsymptoms" value="panic"> Panic<br>
-            <input type="checkbox" name="subsymptoms" value="unwell"> Feeling unwell / “not right”
-        </div>
-    </div>
-
-    <div class="symptom-box">
-        <input type="checkbox" onclick="toggleSub(this,'allergic')"> Allergic reaction
-        <div id="allergic" class="sub-symptoms">
-            <input type="checkbox" name="subsymptoms" value="skin_reaction"> Skin problems<br>
-            <input type="checkbox" name="subsymptoms" value="dizziness"> Dizziness<br>
-            <input type="checkbox" name="subsymptoms" value="nausea"> Nausea<br>
-            <input type="checkbox" name="subsymptoms" value="breathing"> Breathing problems
-        </div>
-    </div>
-
-</div>
-
-<!-- Camera + Photos Layout -->
-<div id="cameraPhotoWrapper">
-
-    <!-- Camera -->
-    <div id="cameraSection" style="display:none;">
-        <video id="video" width="300" autoplay></video><br><br>
-        <button type="button" onclick="takePhoto()">Take Photo</button>
-        <button type="button" onclick="closeCamera()">Close Camera</button>
-        <canvas id="canvas" width="300" height="225" style="display:none;"></canvas>
-    </div>
-
-    <!-- Photos -->
-    <div id="photoSection">
-        <p><strong>Captured Images:</strong></p>
-        <div id="photoContainer"></div>
-    </div>
-
-</div>
-
-<input type="hidden" name="captured_images" id="capturedImages">
-<br>
-
-
+    <input type="hidden" name="captured_images" id="capturedImages">
+    <br>
 
     <label>Additional information:</label><br>
     <textarea name="information_text" rows="4" cols="40"></textarea><br><br>
 
     <label>Diagnosed Conditions:</label><br>
     <div class="conditions-container">
-
-        <button type="button" class="condition-btn" onclick="toggleCondition(this, 'diabetes_type_1')">
-            Diabetes Type 1
-        </button>
-
-        <button type="button" class="condition-btn" onclick="toggleCondition(this, 'diabetes_type_2')">
-            Diabetes Type 2
-        </button>
-
-        <button type="button" class="condition-btn" onclick="toggleCondition(this, 'diabetes_type_3')">
-            Diabetes Type 3
-        </button>
-
-        <button type="button" class="condition-btn" onclick="toggleCondition(this, 'hypertension')">
-            Hypertension
-        </button>
-
-        <button type="button" class="condition-btn" onclick="toggleCondition(this, 'uri')">
-            Upper Respiratory Infection
-        </button>
-
-        <button type="button" class="condition-btn" onclick="toggleCondition(this, 'anxiety_depression')">
-            Anxiety / Depression
-        </button>
-
-        <button type="button" class="condition-btn" onclick="toggleOtherConditions()">
-            Other
-        </button>
-
+        <button type="button" class="condition-btn" onclick="toggleCondition(this, 'diabetes_type_1')">Diabetes Type 1</button>
+        <button type="button" class="condition-btn" onclick="toggleCondition(this, 'diabetes_type_2')">Diabetes Type 2</button>
+        <button type="button" class="condition-btn" onclick="toggleCondition(this, 'diabetes_type_3')">Diabetes Type 3</button>
+        <button type="button" class="condition-btn" onclick="toggleCondition(this, 'hypertension')">Hypertension</button>
+        <button type="button" class="condition-btn" onclick="toggleCondition(this, 'uri')">Upper Respiratory Infection</button>
+        <button type="button" class="condition-btn" onclick="toggleCondition(this, 'anxiety_depression')">Anxiety / Depression</button>
+        <button type="button" class="condition-btn" onclick="toggleOtherConditions()">Other</button>
     </div>
 
     <input type="hidden" name="diagnosed_conditions" id="diagnosedConditions">
 
     <div id="otherConditionsBox" style="display:none; margin-top:8px;">
-        <input 
-            type="text" 
-            name="other_conditions"
-            placeholder="Please specify other diagnosed conditions"
-            style="width:100%;">
+        <input type="text" name="other_conditions" placeholder="Please specify other diagnosed conditions" style="width:100%;">
     </div>
-
     <br><br>
 
-
     <h3>Estimated Time of Arrival</h3>
-    <!-- Transport mode selector -->
     <label for="travelMode">Transport method:</label>
     <select id="travelMode">
         <option value="DRIVING">Driving</option>
@@ -260,179 +247,135 @@
         <option value="WALKING">Walking</option>
         <option value="BICYCLING">Bicycling</option>
     </select>
-
     <br><br>
 
-    <!-- Route selector -->
     <label for="routeOption">Route preference:</label>
     <select id="routeOption">
         <option value="BEST_GUESS">Best route</option>
         <option value="LESS_TRAFFIC">Less traffic</option>
     </select>
-
     <br><br>
 
-    <!-- Map -->
     <div id="map" style="width:100%; height:350px; border-radius:8px;"></div>
-
     <br>
 
-    <!-- Auto-filled ETA summary -->
     <div id="etaBox" style="border:1px solid #ccc; padding:10px; border-radius:6px;">
         <strong>ETA:</strong>
         <div id="etaText">Calculating...</div>
     </div>
-
-    <!-- Hidden field to submit ETA -->
     <input type="hidden" name="eta_data" id="etaData">
-
 
     <br><br>
     <button type="submit">Submit</button>
 
 </form>
-
 </main>
 
-<!-- Google Maps JavaScript API (PASTE HERE) -->
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCzMVg8lBqxwC2d5TyPT7XIZZlyGjEQrvc"></script>
 
-
-
 <script>
+// Toggle Sub-Symptoms visibility
 function toggleSub(checkbox, id) {
     const div = document.getElementById(id);
-    div.style.display = checkbox.checked ? "block" : "none";
+    div.style.display = checkbox.checked ? "flex" : "none";
+    if(checkbox.checked) div.classList.add('show');
+    else div.classList.remove('show');
 }
 
 let videoStream;
-
 function openCamera() {
     const cameraSection = document.getElementById("cameraSection");
     cameraSection.style.display = "block";
-
     navigator.mediaDevices.getUserMedia({ video: true })
         .then(stream => {
             videoStream = stream;
             document.getElementById("video").srcObject = stream;
         })
-        .catch(err => {
-            alert("Camera access denied or unavailable.");
-        });
+        .catch(err => { alert("Camera access denied or unavailable."); });
 }
 
 let capturedImages = [];
-
 function takePhoto() {
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
-
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
     const imageData = canvas.toDataURL("image/png");
-
-    // Store image
     capturedImages.push(imageData);
     updateHiddenInput();
     displayImages();
 }
 
-
-
 function displayImages() {
     const container = document.getElementById("photoContainer");
     container.innerHTML = "";
-
     capturedImages.forEach((img, index) => {
         const wrapper = document.createElement("div");
         wrapper.className = "photo-wrapper";
         wrapper.style.marginBottom = "15px"; 
-        wrapper.style.textAlign = "center";
-
+        
         const image = document.createElement("img");
         image.src = img;
         image.style.width = "150px";
         image.style.borderRadius = "8px";
         image.style.border = "1px solid #ccc";
 
-        // --- THE AI BUTTON ---
         const analyzeBtn = document.createElement("button");
         analyzeBtn.type = "button";
         analyzeBtn.innerHTML = "🏥 Check Severity (AI)";
         analyzeBtn.style.marginTop = "5px";
-        analyzeBtn.style.backgroundColor = "#ff9800"; // Orange
-        analyzeBtn.style.color = "white";
-        analyzeBtn.style.border = "none";
+        analyzeBtn.style.backgroundColor = "#ff9800";
         analyzeBtn.style.padding = "5px 10px";
-        analyzeBtn.style.cursor = "pointer";
-        analyzeBtn.style.borderRadius = "4px";
         analyzeBtn.style.fontSize = "12px";
-        
-        // When clicked, run the AI function
         analyzeBtn.onclick = () => runAIAnalysis(img, analyzeBtn);
 
-        // DELETE BUTTON
         const deleteBtn = document.createElement("button");
         deleteBtn.type = "button";
         deleteBtn.textContent = "Remove";
         deleteBtn.style.marginTop = "5px";
-        deleteBtn.style.marginLeft = "5px";
         deleteBtn.style.fontSize = "12px";
         deleteBtn.onclick = () => deletePhoto(index);
 
         wrapper.appendChild(image);
-        wrapper.appendChild(document.createElement("br")); // New line
         wrapper.appendChild(analyzeBtn);
         wrapper.appendChild(deleteBtn);
         container.appendChild(wrapper);
     });
 }
 
-// --- ADD THIS NEW FUNCTION BELOW displayImages ---
-
 function runAIAnalysis(base64Image, btnElement) {
-    // 1. Change button text to show it's working
     const originalText = btnElement.innerHTML;
     btnElement.innerHTML = "⏳ Analyzing...";
     btnElement.disabled = true;
-
-    // 2. Send to Python
     fetch("/analyze_injury", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image: base64Image })
     })
     .then(response => response.json())
     .then(data => {
-        // 3. Handle Result
         if (data.error) {
             alert("Error: " + data.error);
             btnElement.innerHTML = originalText;
             btnElement.disabled = false;
         } else {
-            // Update the button with the result
             if (data.is_severe) {
                 btnElement.innerHTML = "⚠️ SEVERE";
-                btnElement.style.backgroundColor = "#d32f2f"; // Red
+                btnElement.style.backgroundColor = "#d32f2f";
                 alert(data.message + "\n\nConfidence: " + data.confidence);
             } else {
                 btnElement.innerHTML = "✅ MINOR";
-                btnElement.style.backgroundColor = "#388e3c"; // Green
+                btnElement.style.backgroundColor = "#388e3c";
                 alert(data.message + "\n\nConfidence: " + data.confidence);
             }
         }
     })
     .catch(err => {
-        console.error(err);
         alert("Server connection failed.");
         btnElement.innerHTML = originalText;
         btnElement.disabled = false;
     });
 }
-    
 
 function deletePhoto(index) {
     capturedImages.splice(index, 1);
@@ -444,8 +387,6 @@ function updateHiddenInput() {
     document.getElementById("capturedImages").value = JSON.stringify(capturedImages);
 }
 
-
-
 function closeCamera() {
     if (videoStream) {
         videoStream.getTracks().forEach(track => track.stop());
@@ -453,12 +394,9 @@ function closeCamera() {
     document.getElementById("cameraSection").style.display = "none";
 }
 
-
-
 function validateMedicalCard() {
     const input = document.getElementById("medicalCard");
     const error = document.getElementById("cardError");
-
     if (input.value.includes(" ")) {
         input.classList.add("input-error");
         error.style.display = "block";
@@ -471,10 +409,7 @@ function validateMedicalCard() {
 function validatePhoneNumber() {
     const input = document.getElementById("phoneNumber");
     const error = document.getElementById("phoneError");
-
-    // Allow digits only
     const digitsOnly = /^[0-9]{10,15}$/;
-
     if (!digitsOnly.test(input.value)) {
         input.classList.add("input-error");
         error.style.display = "block";
@@ -485,7 +420,6 @@ function validatePhoneNumber() {
 }
 
 let selectedConditions = [];
-
 function toggleCondition(button, value) {
     if (selectedConditions.includes(value)) {
         selectedConditions = selectedConditions.filter(v => v !== value);
@@ -494,9 +428,7 @@ function toggleCondition(button, value) {
         selectedConditions.push(value);
         button.classList.add("active");
     }
-
-    document.getElementById("diagnosedConditions").value =
-        JSON.stringify(selectedConditions);
+    document.getElementById("diagnosedConditions").value = JSON.stringify(selectedConditions);
 }
 
 function toggleOtherConditions() {
@@ -510,73 +442,38 @@ const CHUM_LOCATION = { lat: 45.5088, lng: -73.554 };
 function initMap() {
     directionsService = new google.maps.DirectionsService();
     directionsRenderer = new google.maps.DirectionsRenderer();
-
-    map = new google.maps.Map(document.getElementById("map"), {
-        zoom: 14,
-        center: CHUM_LOCATION
-    });
-
+    map = new google.maps.Map(document.getElementById("map"), { zoom: 14, center: CHUM_LOCATION });
     directionsRenderer.setMap(map);
-
     if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            position => {
-                const userLocation = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                };
-
-                calculateRoute(userLocation);
-                document.getElementById("travelMode").addEventListener("change", () => calculateRoute(userLocation));
-                document.getElementById("routeOption").addEventListener("change", () => calculateRoute(userLocation));
-            },
-            () => {
-                document.getElementById("etaText").innerText =
-                    "Location access denied. Unable to calculate ETA.";
-            }
-        );
-    } else {
-        document.getElementById("etaText").innerText =
-            "Geolocation not supported.";
+        navigator.geolocation.getCurrentPosition(position => {
+            const userLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
+            calculateRoute(userLocation);
+            document.getElementById("travelMode").addEventListener("change", () => calculateRoute(userLocation));
+            document.getElementById("routeOption").addEventListener("change", () => calculateRoute(userLocation));
+        }, () => { document.getElementById("etaText").innerText = "Location access denied."; });
     }
 }
 
 function calculateRoute(origin) {
     const mode = document.getElementById("travelMode").value;
     const routePref = document.getElementById("routeOption").value;
-
-    directionsService.route(
-        {
-            origin: origin,
-            destination: CHUM_LOCATION,
-            travelMode: google.maps.TravelMode[mode],
-            drivingOptions: {
-                departureTime: new Date(),
-                trafficModel:
-                    routePref === "LESS_TRAFFIC" ? "pessimistic" : "bestguess"
-            }
-        },
-        (result, status) => {
-            if (status === "OK") {
-                directionsRenderer.setDirections(result);
-
-                const leg = result.routes[0].legs[0];
-                const etaText =
-                    `${leg.duration.text} (${leg.distance.text})`;
-
-                document.getElementById("etaText").innerText = etaText;
-                document.getElementById("etaData").value =
-                    `Mode: ${mode}, ETA: ${etaText}`;
-            }
+    directionsService.route({
+        origin: origin,
+        destination: CHUM_LOCATION,
+        travelMode: google.maps.TravelMode[mode],
+        drivingOptions: { departureTime: new Date(), trafficModel: routePref === "LESS_TRAFFIC" ? "pessimistic" : "bestguess" }
+    }, (result, status) => {
+        if (status === "OK") {
+            directionsRenderer.setDirections(result);
+            const leg = result.routes[0].legs[0];
+            const etaText = `${leg.duration.text} (${leg.distance.text})`;
+            document.getElementById("etaText").innerText = etaText;
+            document.getElementById("etaData").value = `Mode: ${mode}, ETA: ${etaText}`;
         }
-    );
+    });
 }
-
-/* AUTO LOAD MAP ON PAGE OPEN */
 window.onload = initMap;
-
 </script>
-
 
 </body>
 </html>

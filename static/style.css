@@ -9,11 +9,21 @@ body.page-bg {
 .header {
     display: flex;
     align-items: center;
-    gap: 12px;
+    justify-content: space-between;
     padding: 20px 40px;
 }
 
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .logo {
+    height: 40px;
+}
+
+.careflow-logo {
     height: 40px;
 }
 
@@ -33,7 +43,7 @@ body.page-bg {
 }
 
 .card {
-    max-width: 1100px;
+    max-width: 1200px; /* Slightly wider to fit 5 columns comfortably */
     margin: 40px auto;
     background: white;
     border-radius: 14px;
@@ -46,7 +56,10 @@ form {
     margin-top: 20px;
 }
 
-input, select, textarea {
+input[type="text"], 
+input[type="tel"], 
+select, 
+textarea {
     width: 100%;
     padding: 12px 16px;
     margin: 8px 0;
@@ -54,6 +67,7 @@ input, select, textarea {
     border-radius: 8px;
     font-size: 16px;
     font-family: 'Segoe UI', sans-serif;
+    box-sizing: border-box; /* Ensures padding doesn't break width */
 }
 
 input:focus, select:focus, textarea:focus {
@@ -81,60 +95,91 @@ button:hover {
     box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
 }
 
-/* Symptom Grid */
+/* --- SYMPTOM GRID LAYOUT --- */
 .symptom-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    /* This creates the 5-column look like your photo */
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 16px;
     margin-bottom: 24px;
 }
 
 .symptom-box {
-    border: 1px solid #e1e8ed;
+    border: 1px solid #ccc;
+    border-radius: 6px;
     padding: 16px;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: #fafbfc;
+    background: #fff;
+    
+    /* Flex column to stack the Main Label above the Sub-symptoms */
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column; 
+    align-items: flex-start; /* Aligns everything to the left */
+    min-height: 140px;
 }
 
-.symptom-box input[type="checkbox"] {
-    margin-left: auto;
-    margin-right: 0;
-}
-
+/* Hover effect only (no javascript active class needed) */
 .symptom-box:hover {
-    background: #f0f4f8;
     border-color: #4a90e2;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
-/* Sub-symptoms */
+/* --- MAIN LABEL (Checkbox + Text) --- */
+.symptom-box > label {
+    display: flex;
+    flex-direction: row; /* Forces checkbox and text to be side-by-side */
+    align-items: flex-start;
+    width: 100%;
+    font-weight: 500;
+    color: #000;
+    cursor: pointer;
+    gap: 10px; /* Space between checkbox and text */
+}
+
+.symptom-box > label > input[type="checkbox"] {
+    margin-top: 4px; /* Slight adjustment to align with text */
+    transform: scale(1.1);
+    cursor: pointer;
+}
+
+/* Camera Icon Styling */
+.camera-icon {
+    font-size: 16px;
+    margin-left: 6px;
+    cursor: pointer;
+}
+
+/* --- SUB-SYMPTOMS (Indented List) --- */
 .sub-symptoms {
-    margin-top: 12px;
-    display: none;
+    display: none; /* Hidden by default */
+    width: 100%;
+    margin-top: 10px;
+    padding-left: 26px; /* Indent to align under the text */
+    box-sizing: border-box;
 }
 
 .sub-symptoms.show {
-    display: block;
+    display: flex;
+    flex-direction: column; /* Stack sub-items vertically */
+    gap: 6px; /* Space between sub-items */
 }
 
-/* Checkbox styling within sub-symptoms - checkboxes on the right */
-.sub-symptoms {
-    line-height: 1.8;
+/* Sub-item specific styling */
+.sub-symptoms label {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+    gap: 8px; /* Space between sub-checkbox and sub-text */
+    margin: 0;
 }
 
 .sub-symptoms input[type="checkbox"] {
-    float: right;
-    margin-left: 10px;
-    margin-top: 2px;
+    margin: 0;
+    transform: scale(1);
 }
 
-/* Camera and Photo Section */
+/* --- Camera / Photo Section --- */
 #cameraPhotoWrapper {
     display: flex;
     align-items: flex-start;
@@ -166,7 +211,7 @@ button:hover {
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
-/* Conditions */
+/* Conditions Buttons */
 .conditions-container {
     display: flex;
     flex-wrap: wrap;
@@ -192,17 +237,12 @@ button:hover {
     border-color: #4a90e2;
 }
 
-.condition-btn:hover {
-    background: #97bbf9;
-}
-
 /* Map Section */
 #map {
     margin-top: 12px;
     height: 220px;
     border: 2px solid #e1e8ed;
     border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 #etaBox {
@@ -213,32 +253,15 @@ button:hover {
     border: 1px solid #e1e8ed;
 }
 
-/* Error styling */
 .input-error {
     border: 2px solid #e74c3c !important;
-    box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.1) !important;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
-    .card {
-        margin: 20px;
-        padding: 20px;
-    }
-
-    .header {
-        padding: 16px 20px;
-    }
-
     .symptom-grid {
         grid-template-columns: 1fr;
     }
-
     #cameraPhotoWrapper {
         flex-direction: column;
-    }
-
-    .hero h2 {
-        font-size: 24px;
     }
 }
