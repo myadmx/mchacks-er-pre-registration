@@ -10,7 +10,6 @@ from datetime import datetime
 from pymongo import MongoClient
 
 # --- CUSTOM MODULE IMPORTS ---
-# Ensure classifier.py and staff_calculator.py are in the same folder
 try:
     from classifier import classify_patient
 except ImportError:
@@ -76,14 +75,17 @@ def download_missing_data(category, target_count=100):
         if current_count >= target_count: break
         try:
             downloader.download(query, limit=20, output_dir=temp_dir, adult_filter_off=True, force_replace=False, timeout=5, verbose=False)
+            
+            # Move files and validate them
             for root, dirs, files in os.walk(temp_dir):
                 for file in files:
                     if file.lower().endswith(('.jpg', '.jpeg', '.png')):
                         temp_file_path = os.path.join(root, file)
                         target_file_path = os.path.join(target_dir, f"auto_{category}_{current_count}.jpg")
+                        
                         try:
                             with Image.open(temp_file_path) as img:
-                                img.verify() 
+                                img.verify()  # Check if image is valid
                             shutil.move(temp_file_path, target_file_path)
                             current_count += 1
                         except:
@@ -172,7 +174,7 @@ def prepare_image(image, target_size):
 def form():
     return render_template("form.html")
 
-# --- IMAGE ANALYSIS ROUTE (Used by the 'Check Severity' button) ---
+# --- IMAGE ANALYSIS ROUTE ---
 @app.route("/analyze_injury", methods=["POST"])
 def analyze_injury():
     if MODEL_BRAIN is None:
@@ -190,85 +192,96 @@ def analyze_injury():
             return jsonify({"error": "Invalid image data."})
         
         processed_image = prepare_image(image, target_size=(224, 224))
-        prediction = MODEL_BRAIN.predict(processed_image)[0][0]
+        raw_prediction = MODEL_BRAIN.predict(processed_image)[0][0]
         
-        is_severe = prediction > 0.5
-        confidence = int(prediction * 100) if is_severe else int((1-prediction) * 100)
+        # --- MANUAL TYPE FIX (Prevents JSON Error) ---
+        score_val = float(raw_prediction)
+        
+        if score_val > 0.5:
+            is_severe_result = True
+            confidence_result = int(score_val * 100)
+            msg_result = "⚠️ POTENTIAL SEVERE INJURY"
+        else:
+            is_severe_result = False
+            confidence_result = int((1.0 - score_val) * 100)
+            msg_result = "✅ Injury appears minor"
 
         return jsonify({
-            "is_severe": is_severe,
-            "confidence": f"{confidence}%",
-            "message": "⚠️ POTENTIAL SEVERE INJURY" if is_severe else "✅ Injury appears minor"
+            "is_severe": is_severe_result,
+            "confidence": f"{confidence_result}%",
+            "message": msg_result
         })
+        
     except Exception as e:
-        return jsonify({"error": str(e)})
+        print(f"Error in analyze_injury: {e}") 
+        return jsonify({"error": f"Server Error: {str(e)}"})
 
-# --- FORM SUBMISSION ROUTE ---
+# --- FORM SUBMISSION ROUTE (FIXED NAME & SYMPTOMS) ---
 @app.route("/submit", methods=["POST"])
 def submit():
-    # 1. Gather all data from the updated HTML form
-    full_name = request.form.get("name")  # HTML name="name"
+    # 1. Get the name correctly from HTML name="name"
+    full_name = request.form.get("name") 
+    
+    # 2. Join symptoms list into a string so AI can read it
+    subsymptoms_list = request.form.getlist("subsymptoms")
+    subsymptoms_str = ", ".join(subsymptoms_list) if subsymptoms_list else "None"
+
+    # 3. Prepare data for AI
     raw_patient_data = {
         "full_name": full_name,
         "sex": request.form.get("sex"),
-        "medical_card": request.form.get("medical_card"),
-        "phone_number": request.form.get("phone_number"),
-        "age_range": request.form.get("age_range"),
-        "subsymptoms": request.form.getlist("subsymptoms"), # List of checked boxes
+        "age": request.form.get("age_range"), # Changed key to 'age' to match classifier
+        "subsymptoms": subsymptoms_str,       # Sending string, not list
         "additional_info": request.form.get("information_text"),
         "diagnosed_conditions": request.form.get("diagnosed_conditions"),
         "eta": request.form.get("eta_data"),
-        "captured_images": request.form.get("captured_images") # JSON string of base64s
+        "captured_images": request.form.get("captured_images")
     }
 
-    print("DEBUG: Processing patient:", full_name)
+    print(f"DEBUG: Processing patient: {full_name}")
+    print(f"DEBUG: Symptoms sending to AI: {subsymptoms_str}")
 
-    # 2. Call Text AI for Triage
     try:
+        # 4. Call Classifier
         ai_result = classify_patient(raw_patient_data)
+        
+        # 5. Handle AI Result
         if isinstance(ai_result, str):
-            triage_analysis = json.loads(ai_result)
+            # If AI returns a code block like ```json ... ``` clean it
+            clean_json = ai_result.replace("```json", "").replace("```", "").strip()
+            triage_analysis = json.loads(clean_json)
         else:
             triage_analysis = ai_result
+            
     except Exception as e:
         print(f"AI Error: {e}")
-        triage_analysis = {"error": "AI Triage Failed", "details": str(e)}
+        # Fallback if AI fails
+        triage_analysis = {
+            "full_name": full_name,
+            "main_symptoms": ["Error analyzing symptoms"],
+            "severity": 1,
+            "triage_category": "Non-critical"
+        }
 
-    # 3. Create Patient Record
+    # 6. Save to Database
     patient_record = {
         "full_name": full_name,
         "raw_data": raw_patient_data,
         "triage_analysis": triage_analysis,
-        "created_at": datetime.utcnow(), # Important for sorting in Dashboard
+        "created_at": datetime.utcnow(),
         "status": "waiting"
     }
 
-    # 4. Insert into MongoDB
     patients.insert_one(patient_record)
-
     return "Form submitted successfully. You can close this window."
 
-# --- DASHBOARD ROUTE ---
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
-    # Sort by newest first
     patients_list = list(patients.find().sort("created_at", -1))
-    
-    # Calculate staff needed based on current patient load
     staff_needed = calculate_staff_needed()
-
-    return render_template(
-        "dashboard.html",
-        patients=patients_list,
-        staff_needed=staff_needed
-    )
+    return render_template("dashboard.html", patients=patients_list, staff_needed=staff_needed)
 
 if __name__ == "__main__":
-    # Initialize the Image AI before starting the server
     initialize_ai()
-    
-    print("\n✅ App is running!")
-    print("   - Form:      http://127.0.0.1:5000/")
-    print("   - Dashboard: http://127.0.0.1:5000/dashboard\n")
-    
+    print("\n✅ App is running! (Port 5000)")
     app.run(debug=True, port=5000)
