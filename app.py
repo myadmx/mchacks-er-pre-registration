@@ -6,16 +6,24 @@ import shutil
 import json
 import threading
 from flask import Flask, render_template, request, jsonify
-
-# --- NEW IMPORTS (MongoDB & External Classifier) ---
+from datetime import datetime
 from pymongo import MongoClient
+
+# --- CUSTOM MODULE IMPORTS ---
+# Ensure classifier.py and staff_calculator.py are in the same folder
 try:
     from classifier import classify_patient
 except ImportError:
-    print("⚠️ WARNING: 'classifier.py' not found. The /submit route will fail.")
+    print("⚠️ WARNING: 'classifier.py' not found. Text triage will return errors.")
     def classify_patient(data): return '{"error": "Classifier missing"}'
 
-# --- AI & IMAGE IMPORTS ---
+try:
+    from staff_calculator import calculate_staff_needed
+except ImportError:
+    print("⚠️ WARNING: 'staff_calculator.py' not found. Staff calculation disabled.")
+    def calculate_staff_needed(): return 0
+
+# --- AI & IMAGE LIB IMPORTS ---
 from PIL import Image
 from bing_image_downloader import downloader
 import tensorflow as tf
@@ -27,19 +35,21 @@ from sklearn.model_selection import train_test_split
 
 app = Flask(__name__)
 
-# ---------- MongoDB Atlas connection ----------
+# ==========================================
+# 1. DATABASE CONFIGURATION
+# ==========================================
 MONGO_URI = "mongodb+srv://er_user:erregistration26@er-registration.g3veiau.mongodb.net/?appName=ER-registration"
 client = MongoClient(MONGO_URI)
 db = client.er_dashboard
 patients = db.patients
-# ---------------------------------------------
 
-# --- CONFIGURATION (Image AI) ---
+# ==========================================
+# 2. IMAGE AI CONFIGURATION & LOGIC
+# ==========================================
 DATASET_DIR = "dataset"
 MODEL_FILE = "injury_model.h5"
 MODEL_BRAIN = None 
 
-# Expanded search terms to ensure we get enough data
 SEARCH_TERMS = {
     "minor": [
         "small scratch on arm", "minor knee scrape", "healthy skin arm close up", 
@@ -53,7 +63,6 @@ SEARCH_TERMS = {
     ]
 }
 
-# --- PART 1: IMAGE AI SETUP LOGIC ---
 def download_missing_data(category, target_count=100):
     print(f"   ⬇️ Downloading more '{category}' data to reach {target_count} images...")
     temp_dir = f"temp_download_{category}"
@@ -67,81 +76,53 @@ def download_missing_data(category, target_count=100):
         if current_count >= target_count: break
         try:
             downloader.download(query, limit=20, output_dir=temp_dir, adult_filter_off=True, force_replace=False, timeout=5, verbose=False)
-            
-            # Move files and validate them
             for root, dirs, files in os.walk(temp_dir):
                 for file in files:
                     if file.lower().endswith(('.jpg', '.jpeg', '.png')):
                         temp_file_path = os.path.join(root, file)
                         target_file_path = os.path.join(target_dir, f"auto_{category}_{current_count}.jpg")
-                        
-                        # Validate the image before moving
                         try:
                             with Image.open(temp_file_path) as img:
-                                img.verify()  # Check if image is valid
-                            # If validation passes, move the file
+                                img.verify() 
                             shutil.move(temp_file_path, target_file_path)
                             current_count += 1
-                            print(f"   ✅ Valid image saved: {target_file_path}")
-                        except Exception as e:
-                            print(f"   ❌ Skipping corrupted image: {file} - {e}")
-                            # Remove the corrupted file
-                            try:
-                                os.remove(temp_file_path)
-                            except:
-                                pass
+                        except:
+                            pass
         except Exception as e:
-            print(f"   ❌ Download failed for query '{query}': {e}")
-
+            print(f"   ❌ Download error: {e}")
     try: shutil.rmtree(temp_dir)
     except: pass
-    print(f"   ✅ '{category}' now has {current_count} images.")
 
 def train_model_logic():
     print("   🧠 Training AI Model (this may take 30-60 seconds)...")
     try:
-        # First, let's manually check and filter out corrupted images
-        print("   🔍 Pre-checking images for corruption...")
         valid_images = []
         labels = []
-        
         for category in ['minor', 'severe']:
             category_dir = os.path.join(DATASET_DIR, category)
             label = 0 if category == 'minor' else 1
-            
             if os.path.exists(category_dir):
                 for file in os.listdir(category_dir):
                     if file.lower().endswith(('.jpg', '.jpeg', '.png')):
-                        img_path = os.path.join(category_dir, file)
                         try:
+                            img_path = os.path.join(category_dir, file)
                             img = tf.keras.preprocessing.image.load_img(img_path, target_size=(224, 224))
                             img_array = tf.keras.preprocessing.image.img_to_array(img)
                             valid_images.append(img_array)
                             labels.append(label)
-                        except Exception as e:
-                            print(f"   ⚠️ Skipping corrupted image: {img_path} - {e}")
+                        except: pass
         
-        if len(valid_images) < 10:  # Need minimum images
-            print(f"   ❌ Not enough valid images found: {len(valid_images)}")
+        if len(valid_images) < 10:
+            print("   ❌ Not enough valid images to train.")
             return False
             
-        print(f"   ✅ Found {len(valid_images)} valid images")
-        
-        # Convert to numpy arrays
         X = np.array(valid_images)
         y = np.array(labels)
-        
-        # Split into train/validation
-        from sklearn.model_selection import train_test_split
         X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
         
-        # Data augmentation
         train_datagen = ImageDataGenerator(rescale=1./255, rotation_range=20, horizontal_flip=True)
         val_datagen = ImageDataGenerator(rescale=1./255)
         
-        train_generator = train_datagen.flow(X_train, y_train, batch_size=16)
-        val_generator = val_datagen.flow(X_val, y_val, batch_size=16)
-
         base_model = MobileNetV2(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
         base_model.trainable = False
         x = base_model.output
@@ -152,10 +133,8 @@ def train_model_logic():
         
         new_model = Model(inputs=base_model.input, outputs=predictions)
         new_model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-        
-        new_model.fit(train_generator, validation_data=val_generator, epochs=5, verbose=1)
+        new_model.fit(train_datagen.flow(X_train, y_train, batch_size=16), validation_data=val_datagen.flow(X_val, y_val, batch_size=16), epochs=5, verbose=1)
         new_model.save(MODEL_FILE)
-        print("   ✅ Model saved!")
         return True
     except Exception as e:
         print(f"   ❌ Training failed: {e}")
@@ -163,40 +142,14 @@ def train_model_logic():
 
 def initialize_ai():
     global MODEL_BRAIN
-    
-    # 1. ensure folders
     os.makedirs(os.path.join(DATASET_DIR, "severe"), exist_ok=True)
     os.makedirs(os.path.join(DATASET_DIR, "minor"), exist_ok=True)
-
-    # 2. Check counts & BALANCE THEM
-    severe_count = len(os.listdir(os.path.join(DATASET_DIR, "severe")))
-    minor_count = len(os.listdir(os.path.join(DATASET_DIR, "minor")))
     
-    print(f"   📊 Data Check: {severe_count} Severe | {minor_count} Minor")
-    
-    # Logic: If one folder is much larger, fill the other one
-    needs_training = False
-    
-    if severe_count < 80: # Aim for at least 80 severe
-        download_missing_data("severe", target_count=100)
-        needs_training = True
-        
-    if minor_count < 80:
-        download_missing_data("minor", target_count=100)
-        needs_training = True
+    if not os.path.exists(MODEL_FILE):
+        download_missing_data("severe", 80)
+        download_missing_data("minor", 80)
+        train_model_logic()
 
-    # 3. Train if needed or if model is missing
-    if needs_training or not os.path.exists(MODEL_FILE):
-        print("   ⚠️ Starting training sequence...")
-        success = train_model_logic()
-        if not success:
-            print("   ❌ AI Setup Failed.")
-            print("   💡 Tip: Check your dataset folder for corrupted images.")
-            print("   💡 You can manually delete corrupted images and restart the app.")
-            return
-
-    # 4. Load Model
-    print(" * 🚀 Loading Model into Memory...")
     try:
         MODEL_BRAIN = load_model(MODEL_FILE)
         print(" * 🤖 Image AI Ready!")
@@ -211,78 +164,66 @@ def prepare_image(image, target_size):
     image = image / 255.0
     return image
 
-# --- PART 2: FLASK ROUTES ---
+# ==========================================
+# 3. FLASK ROUTES
+# ==========================================
 
 @app.route("/", methods=["GET"])
 def form():
     return render_template("form.html")
 
+# --- IMAGE ANALYSIS ROUTE (Used by the 'Check Severity' button) ---
 @app.route("/analyze_injury", methods=["POST"])
 def analyze_injury():
     if MODEL_BRAIN is None:
-        # This handles the "AI Model is not loaded" error nicely
-        return jsonify({"error": "AI is still starting up. Please wait 10 seconds and try again."})
+        return jsonify({"error": "AI is initializing. Please wait."})
 
     try:
         data = request.get_json()
-        image_data = data['image']
+        image_data = data.get('image', '')
         if "base64," in image_data: image_data = image_data.split(",")[1]
         
-        # Validate base64 data
         try:
             decoded = base64.b64decode(image_data)
-        except Exception as decode_error:
-            return jsonify({"error": "Invalid base64 image data received."})
-        
-        # Validate that it's actually an image
-        try:
             image = Image.open(io.BytesIO(decoded))
-            image.verify()  # Verify the image is not corrupted
-            image.close()   # Close the image
-            # Re-open for processing
-            image = Image.open(io.BytesIO(decoded))
-        except Exception as img_error:
-            return jsonify({"error": "The uploaded data is not a valid image file. Please ensure you're sending a proper image."})
+        except:
+            return jsonify({"error": "Invalid image data."})
         
         processed_image = prepare_image(image, target_size=(224, 224))
-
         prediction = MODEL_BRAIN.predict(processed_image)[0][0]
-        severity_score = float(prediction)
         
-        # 0 = Minor, 1 = Severe
-        is_severe = severity_score > 0.5
-        confidence_percent = int(severity_score * 100) if is_severe else int((1-severity_score) * 100)
+        is_severe = prediction > 0.5
+        confidence = int(prediction * 100) if is_severe else int((1-prediction) * 100)
 
         return jsonify({
             "is_severe": is_severe,
-            "confidence": f"{confidence_percent}%",
-            "message": "⚠️ POTENTIAL SEVERE INJURY. Go to ER." if is_severe else "✅ Injury appears minor."
+            "confidence": f"{confidence}%",
+            "message": "⚠️ POTENTIAL SEVERE INJURY" if is_severe else "✅ Injury appears minor"
         })
     except Exception as e:
-        # Provide more specific error messages
-        error_msg = str(e)
-        if "broken data stream" in error_msg:
-            return jsonify({"error": "Invalid image data received. Please ensure you're sending a valid image file."})
-        elif "cannot identify image file" in error_msg:
-            return jsonify({"error": "The uploaded file is not a recognized image format. Please use JPG, PNG, or other common image formats."})
-        else:
-            return jsonify({"error": f"Failed to process image: {error_msg}"})
+        return jsonify({"error": str(e)})
 
+# --- FORM SUBMISSION ROUTE ---
 @app.route("/submit", methods=["POST"])
 def submit():
-    symptoms_list = request.form.getlist("subsymptoms")
-    symptoms_str = ", ".join(symptoms_list) if symptoms_list else "None explicitly selected"
-    
+    # 1. Gather all data from the updated HTML form
+    full_name = request.form.get("name")  # HTML name="name"
     raw_patient_data = {
-        "full_name": request.form.get("name"),
-        "phone": request.form.get("phone_number"),
+        "full_name": full_name,
+        "sex": request.form.get("sex"),
         "medical_card": request.form.get("medical_card"),
-        "age": request.form.get("age_range"),
-        "symptoms": symptoms_str,
-        "other_info": request.form.get("information_text"),
-        "diagnosed_conditions": request.form.get("diagnosed_conditions")
+        "phone_number": request.form.get("phone_number"),
+        "age_range": request.form.get("age_range"),
+        "subsymptoms": request.form.getlist("subsymptoms"), # List of checked boxes
+        "additional_info": request.form.get("information_text"),
+        "diagnosed_conditions": request.form.get("diagnosed_conditions"),
+        "eta": request.form.get("eta_data"),
+        "captured_images": request.form.get("captured_images") # JSON string of base64s
     }
 
+    print("DEBUG: Processing patient:", full_name)
+
+    # 2. Call Text AI for Triage
     try:
         ai_result = classify_patient(raw_patient_data)
         if isinstance(ai_result, str):
@@ -290,18 +231,44 @@ def submit():
         else:
             triage_analysis = ai_result
     except Exception as e:
+        print(f"AI Error: {e}")
         triage_analysis = {"error": "AI Triage Failed", "details": str(e)}
 
-    document = {
+    # 3. Create Patient Record
+    patient_record = {
+        "full_name": full_name,
         "raw_data": raw_patient_data,
         "triage_analysis": triage_analysis,
-        "status": "waiting",
-        "captured_images": request.form.get("captured_images")
+        "created_at": datetime.utcnow(), # Important for sorting in Dashboard
+        "status": "waiting"
     }
 
-    patients.insert_one(document)
-    return "Form submitted successfully. Thank you for your time."
+    # 4. Insert into MongoDB
+    patients.insert_one(patient_record)
+
+    return "Form submitted successfully. You can close this window."
+
+# --- DASHBOARD ROUTE ---
+@app.route("/dashboard", methods=["GET"])
+def dashboard():
+    # Sort by newest first
+    patients_list = list(patients.find().sort("created_at", -1))
+    
+    # Calculate staff needed based on current patient load
+    staff_needed = calculate_staff_needed()
+
+    return render_template(
+        "dashboard.html",
+        patients=patients_list,
+        staff_needed=staff_needed
+    )
 
 if __name__ == "__main__":
+    # Initialize the Image AI before starting the server
     initialize_ai()
-    app.run(debug=True, port=5002)
+    
+    print("\n✅ App is running!")
+    print("   - Form:      http://127.0.0.1:5000/")
+    print("   - Dashboard: http://127.0.0.1:5000/dashboard\n")
+    
+    app.run(debug=True, port=5000)

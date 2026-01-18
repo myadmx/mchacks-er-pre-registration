@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ER Dashboard – Incoming Patients</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            margin: 0;
+            padding: 30px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 14px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+            vertical-align: top;
+        }
+
+        th {
+            background-color: #f0f2f5;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background-color: #fafafa;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        /* Severity colors */
+        .severity-low {
+            background-color: #d4f5e3;
+            color: #1e7f4f;
+        }
+
+        .severity-medium {
+            background-color: #ffe4c2;
+            color: #b35a00;
+        }
+
+        .severity-high {
+            background-color: #f8c7cc;
+            color: #9e1c1c;
+        }
+
+        /* Triage badges */
+        .triage-non-critical {
+            background-color: #e3fcef;
+            color: #1a7f55;
+        }
+
+        .triage-critical {
+            background-color: #fff1c1;
+            color: #8a5a00;
+        }
+
+        .triage-life {
+            background-color: #fde2e2;
+            color: #9f1d1d;
+        }
+
+        details {
+            cursor: pointer;
+        }
+
+        details summary {
+            font-weight: 600;
+            color: #0056b3;
+        }
+
+        .sub-info {
+            margin-top: 8px;
+            font-size: 0.9em;
+            color: #444;
+        }
+        .staff-suggestion {
+            margin-top: 25px;
+            padding: 18px;
+            background-color: #6494ed;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #fff8f8;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<div style="position: relative; margin-bottom: 40px;">
+
+    <!-- Logo top-left -->
+    <img src="{{ url_for('static', filename='chum-logo.png') }}"
+         style="
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 80px;
+            width: 100px;
+
+         ">
+    <!--Our logo top-right-->
+    <img src= "{{ url_for('static', filename='CAREFLOW_logo.png') }}"
+         style="
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 80px;
+            width: 140px;
+         ">
+
+</div>
+<div>
+<!-- Title centered and LOWER -->
+    <h1 style="
+        text-align: center;    ">
+        Emergency Department – Incoming Patients
+    </h1>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Patient Name</th>
+            <th>Sex</th>
+            <th>Severity</th>
+            <th>Triage</th>
+            <th>ETA</th>
+            <th>Details</th>
+        </tr>
+    </thead>
+    <tbody>
+
+        {% for patient in patients %}
+        <tr>
+            <td>{{ patient.get("raw_data", {}).get("full_name", "Unknown") }}</td>
+            <td>{{ patient.get("raw_data", {}).get("sex", "—") }}</td>
+
+            <!-- Severity -->
+            <td>
+                {% set severity = patient.get("triage_analysis", {}).get("severity", 0) %}
+                {% if severity >= 4 %}
+                    <span class="badge severity-high">{{ severity }}</span>
+                {% elif severity == 3 %}
+                    <span class="badge severity-medium">{{ severity }}</span>
+                {% else %}
+                    <span class="badge severity-low">{{ severity }}</span>
+                {% endif %}
+            </td>
+
+            <!-- Triage Category -->
+            <td>
+                {% set triage_cat = patient.get("triage_analysis", {}).get("triage_category", "Non-critical") %}
+                {% if triage_cat == "Life-threatening" %}
+                    <span class="badge triage-life">Life-threatening</span>
+                {% elif triage_cat == "Critical" %}
+                    <span class="badge triage-critical">Critical</span>
+                {% else %}
+                    <span class="badge triage-non-critical">Non Critical</span>
+                {% endif %}
+            </td>
+
+            <!-- ETA -->
+            <td>{{ patient.get("raw_data", {}).get("eta", "—") }}</td>
+
+            <!-- Details -->
+            <td>
+                <details>
+                    <summary>View</summary>
+                    <div class="sub-info">
+                        <strong>Main symptoms:</strong>
+                        <ul>
+                            {% for s in patient.get("triage_analysis", {}).get("main_symptoms", []) %}
+                                <li>{{ s }}</li>
+                            {% endfor %}
+                        </ul>
+
+                        <strong>Subsymptoms:</strong>
+                        <ul>
+                            {% for ss in patient.get("triage_analysis", {}).get("main_subsymptoms", []) %}
+                                <li>{{ ss }}</li>
+                            {% endfor %}
+                        </ul>
+
+                        <strong>Additional info:</strong>
+                        <p>{{ patient.get("raw_data", {}).get("additional_info", "None provided") }}</p>
+                    </div>
+                </details>
+            </td>
+        </tr>
+        {% endfor %}
+
+    </tbody>
+</table>
+
+<div class="staff-suggestion">
+    Having <strong>{{ staff_needed }}</strong> medical staffs is suggested.
+</div>
+
+</body>
+
+</html>
