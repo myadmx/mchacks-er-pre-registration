@@ -214,10 +214,6 @@ def analyze_injury():
         print(f"Prediction Error: {e}")
         return jsonify({"error": "Failed to process image"})
 
-@app.route("/", methods=["GET"])
-def form():
-    return render_template("form.html")
-
 @app.route("/submit", methods=["POST"])
 def submit():
 
