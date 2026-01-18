@@ -1,0 +1,244 @@
+/* ER Pre-Registration Form Styling */
+
+body.page-bg {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(180deg, #eef6fb, #f9fcff);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 40px;
+}
+
+.logo {
+    height: 40px;
+}
+
+.hero {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.hero h2 {
+    font-size: 28px;
+    color: #1a3b5d;
+}
+
+.hero p {
+    color: #5a6f82;
+    margin-top: 8px;
+}
+
+.card {
+    max-width: 1100px;
+    margin: 40px auto;
+    background: white;
+    border-radius: 14px;
+    padding: 30px 40px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+/* Form Elements */
+form {
+    margin-top: 20px;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 12px 16px;
+    margin: 8px 0;
+    border: 1px solid #e1e8ed;
+    border-radius: 8px;
+    font-size: 16px;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
+}
+
+button {
+    background: linear-gradient(135deg, #4a90e2, #357abd);
+    color: white;
+    padding: 14px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-family: 'Segoe UI', sans-serif;
+    font-weight: 600;
+    margin-top: 10px;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+/* Symptom Grid */
+.symptom-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.symptom-box {
+    border: 1px solid #e1e8ed;
+    padding: 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #fafbfc;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.symptom-box input[type="checkbox"] {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+.symptom-box:hover {
+    background: #f0f4f8;
+    border-color: #4a90e2;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Sub-symptoms */
+.sub-symptoms {
+    margin-top: 12px;
+    display: none;
+}
+
+.sub-symptoms.show {
+    display: block;
+}
+
+/* Checkbox styling within sub-symptoms - checkboxes on the right */
+.sub-symptoms {
+    line-height: 1.8;
+}
+
+.sub-symptoms input[type="checkbox"] {
+    float: right;
+    margin-left: 10px;
+    margin-top: 2px;
+}
+
+/* Camera and Photo Section */
+#cameraPhotoWrapper {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    margin-top: 24px;
+}
+
+#photoSection {
+    max-width: 600px;
+    overflow-x: auto;
+}
+
+#photoContainer {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.photo-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#video {
+    transform: scaleX(-1);
+    border: 2px solid #e1e8ed;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Conditions */
+.conditions-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.condition-btn {
+    padding: 10px 16px;
+    color: #000000;
+    border: 1px solid #000000;
+    background: #ffffff;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: 'Segoe UI', sans-serif;
+    transition: all 0.3s ease;
+}
+
+.condition-btn.active {
+    background: #4a90e2;
+    color: white;
+    border-color: #4a90e2;
+}
+
+.condition-btn:hover {
+    background: #97bbf9;
+}
+
+/* Map Section */
+#map {
+    margin-top: 12px;
+    height: 220px;
+    border: 2px solid #e1e8ed;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+#etaBox {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 12px;
+    border: 1px solid #e1e8ed;
+}
+
+/* Error styling */
+.input-error {
+    border: 2px solid #e74c3c !important;
+    box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.1) !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .card {
+        margin: 20px;
+        padding: 20px;
+    }
+
+    .header {
+        padding: 16px 20px;
+    }
+
+    .symptom-grid {
+        grid-template-columns: 1fr;
+    }
+
+    #cameraPhotoWrapper {
+        flex-direction: column;
+    }
+
+    .hero h2 {
+        font-size: 24px;
+    }
+}

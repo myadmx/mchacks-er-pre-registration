@@ -2,107 +2,22 @@
 <html>
 <head>
     <title>ER Pre-Registration</title>
-
-    <style>
-    .symptom-grid {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 15px;
-        margin-bottom: 20px;
-    }
-
-    .symptom-box {
-        border: 1px solid #ccc;
-        padding: 10px;
-        border-radius: 6px;
-    }
-
-    .sub-symptoms {
-        margin-top: 8px;
-        padding-left: 15px;
-        display: none;
-    }
-
-    .camera-icon {
-        cursor: pointer;
-        margin-left: 5px;
-        font-size: 16px;
-    }
-
-    .input-error {
-        border: 2px solid red;
-    }
-
-    /* Camera + Photos layout */
-    #cameraPhotoWrapper {
-        display: flex;
-        align-items: flex-start;
-        gap: 20px;
-        margin-top: 20px;
-    }
-
-    /* Photo section (right side) */
-    #photoSection {
-        max-width: 520px;
-        overflow-x: auto;
-    }
-
-    /* Grid of captured photos */
-    #photoContainer {
-        display: grid;
-        grid-template-columns: repeat(5, 150px);
-        gap: 12px;
-    }
-
-    /* Individual photo wrapper */
-    .photo-wrapper {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    #video {
-    transform: scaleX(-1);
-    }
-
-    .conditions-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 5px;
-    }
-
-    .condition-btn {
-        padding: 8px 14px;
-        border: 1px solid #ccc;
-        background-color: #f7f7f7;
-        border-radius: 20px;
-        cursor: pointer;
-        font-size: 14px;
-    }
-
-    .condition-btn.active {
-        background-color: #0077cc;
-        color: white;
-        border-color: #0077cc;
-    }
-
-    #map {
-        margin-top: 10px;
-    }
-
-    #etaBox {
-        background-color: #fafafa;
-    }
-
-    </style>
-
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
-<body>
+<body class="page-bg">
 
-<h1>CHUM Hospital</h1>
-<h2>Emergency Room Pre-Registration Form</h2>
+<header class="header">
+    <img src="/static/chum-logo.png" alt="CHUM Hospital" class="logo">
+    <h1>CHUM Hospital</h1>
+</header>
+
+<section class="hero">
+    <h2>Emergency Room Pre-Registration</h2>
+    <p>Save time at the emergency room by pre-registering online.</p>
+</section>
+
+<main class="card">
 
 <form action="/submit" method="POST">
 
@@ -376,6 +291,8 @@
     <button type="submit">Submit</button>
 
 </form>
+
+</main>
 
 <!-- Google Maps JavaScript API (PASTE HERE) -->
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCzMVg8lBqxwC2d5TyPT7XIZZlyGjEQrvc"></script>

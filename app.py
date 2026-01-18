@@ -23,6 +23,7 @@ from tensorflow.keras.models import load_model, Model
 from tensorflow.keras.preprocessing.image import img_to_array, ImageDataGenerator
 from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
+from sklearn.model_selection import train_test_split
 
 app = Flask(__name__)
 
@@ -67,13 +68,30 @@ def download_missing_data(category, target_count=100):
         try:
             downloader.download(query, limit=20, output_dir=temp_dir, adult_filter_off=True, force_replace=False, timeout=5, verbose=False)
             
-            # Move files
+            # Move files and validate them
             for root, dirs, files in os.walk(temp_dir):
                 for file in files:
                     if file.lower().endswith(('.jpg', '.jpeg', '.png')):
-                        shutil.move(os.path.join(root, file), os.path.join(target_dir, f"auto_{category}_{current_count}.jpg"))
-                        current_count += 1
-        except: pass
+                        temp_file_path = os.path.join(root, file)
+                        target_file_path = os.path.join(target_dir, f"auto_{category}_{current_count}.jpg")
+                        
+                        # Validate the image before moving
+                        try:
+                            with Image.open(temp_file_path) as img:
+                                img.verify()  # Check if image is valid
+                            # If validation passes, move the file
+                            shutil.move(temp_file_path, target_file_path)
+                            current_count += 1
+                            print(f"   ✅ Valid image saved: {target_file_path}")
+                        except Exception as e:
+                            print(f"   ❌ Skipping corrupted image: {file} - {e}")
+                            # Remove the corrupted file
+                            try:
+                                os.remove(temp_file_path)
+                            except:
+                                pass
+        except Exception as e:
+            print(f"   ❌ Download failed for query '{query}': {e}")
 
     try: shutil.rmtree(temp_dir)
     except: pass
@@ -81,19 +99,48 @@ def download_missing_data(category, target_count=100):
 
 def train_model_logic():
     print("   🧠 Training AI Model (this may take 30-60 seconds)...")
-    train_datagen = ImageDataGenerator(rescale=1./255, rotation_range=20, horizontal_flip=True, validation_split=0.2)
-    
     try:
-        train_generator = train_datagen.flow_from_directory(
-            DATASET_DIR, target_size=(224, 224), batch_size=16, class_mode='binary', subset='training'
-        )
+        # First, let's manually check and filter out corrupted images
+        print("   🔍 Pre-checking images for corruption...")
+        valid_images = []
+        labels = []
         
-        # Ensure we found both classes
-        if train_generator.samples == 0 or len(train_generator.class_indices) < 2:
-            print("   ❌ CRITICAL: Need both 'minor' and 'severe' folders with images.")
+        for category in ['minor', 'severe']:
+            category_dir = os.path.join(DATASET_DIR, category)
+            label = 0 if category == 'minor' else 1
+            
+            if os.path.exists(category_dir):
+                for file in os.listdir(category_dir):
+                    if file.lower().endswith(('.jpg', '.jpeg', '.png')):
+                        img_path = os.path.join(category_dir, file)
+                        try:
+                            img = tf.keras.preprocessing.image.load_img(img_path, target_size=(224, 224))
+                            img_array = tf.keras.preprocessing.image.img_to_array(img)
+                            valid_images.append(img_array)
+                            labels.append(label)
+                        except Exception as e:
+                            print(f"   ⚠️ Skipping corrupted image: {img_path} - {e}")
+        
+        if len(valid_images) < 10:  # Need minimum images
+            print(f"   ❌ Not enough valid images found: {len(valid_images)}")
             return False
-
-        print(f"   Classes found: {train_generator.class_indices}") # Should be {'minor': 0, 'severe': 1}
+            
+        print(f"   ✅ Found {len(valid_images)} valid images")
+        
+        # Convert to numpy arrays
+        X = np.array(valid_images)
+        y = np.array(labels)
+        
+        # Split into train/validation
+        from sklearn.model_selection import train_test_split
+        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+        
+        # Data augmentation
+        train_datagen = ImageDataGenerator(rescale=1./255, rotation_range=20, horizontal_flip=True)
+        val_datagen = ImageDataGenerator(rescale=1./255)
+        
+        train_generator = train_datagen.flow(X_train, y_train, batch_size=16)
+        val_generator = val_datagen.flow(X_val, y_val, batch_size=16)
 
         base_model = MobileNetV2(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
         base_model.trainable = False
@@ -106,7 +153,7 @@ def train_model_logic():
         new_model = Model(inputs=base_model.input, outputs=predictions)
         new_model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
         
-        new_model.fit(train_generator, epochs=5, verbose=1)
+        new_model.fit(train_generator, validation_data=val_generator, epochs=5, verbose=1)
         new_model.save(MODEL_FILE)
         print("   ✅ Model saved!")
         return True
@@ -141,8 +188,11 @@ def initialize_ai():
     # 3. Train if needed or if model is missing
     if needs_training or not os.path.exists(MODEL_FILE):
         print("   ⚠️ Starting training sequence...")
-        if not train_model_logic():
+        success = train_model_logic()
+        if not success:
             print("   ❌ AI Setup Failed.")
+            print("   💡 Tip: Check your dataset folder for corrupted images.")
+            print("   💡 You can manually delete corrupted images and restart the app.")
             return
 
     # 4. Load Model
@@ -178,8 +228,22 @@ def analyze_injury():
         image_data = data['image']
         if "base64," in image_data: image_data = image_data.split(",")[1]
         
-        decoded = base64.b64decode(image_data)
-        image = Image.open(io.BytesIO(decoded))
+        # Validate base64 data
+        try:
+            decoded = base64.b64decode(image_data)
+        except Exception as decode_error:
+            return jsonify({"error": "Invalid base64 image data received."})
+        
+        # Validate that it's actually an image
+        try:
+            image = Image.open(io.BytesIO(decoded))
+            image.verify()  # Verify the image is not corrupted
+            image.close()   # Close the image
+            # Re-open for processing
+            image = Image.open(io.BytesIO(decoded))
+        except Exception as img_error:
+            return jsonify({"error": "The uploaded data is not a valid image file. Please ensure you're sending a proper image."})
+        
         processed_image = prepare_image(image, target_size=(224, 224))
 
         prediction = MODEL_BRAIN.predict(processed_image)[0][0]
@@ -195,7 +259,14 @@ def analyze_injury():
             "message": "⚠️ POTENTIAL SEVERE INJURY. Go to ER." if is_severe else "✅ Injury appears minor."
         })
     except Exception as e:
-        return jsonify({"error": "Failed to process image"})
+        # Provide more specific error messages
+        error_msg = str(e)
+        if "broken data stream" in error_msg:
+            return jsonify({"error": "Invalid image data received. Please ensure you're sending a valid image file."})
+        elif "cannot identify image file" in error_msg:
+            return jsonify({"error": "The uploaded file is not a recognized image format. Please use JPG, PNG, or other common image formats."})
+        else:
+            return jsonify({"error": f"Failed to process image: {error_msg}"})
 
 @app.route("/submit", methods=["POST"])
 def submit():
@@ -233,4 +304,4 @@ def submit():
 
 if __name__ == "__main__":
     initialize_ai()
-    app.run(debug=True, port=5)
+    app.run(debug=True, port=5002)
